@@ -1,0 +1,11 @@
+venv/
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+*.tfstate
+*.tfstate*
+.terraform/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
