@@ -33,6 +33,12 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     username: Optional[str] = Field(min_length=3, max_length=30)
     email: Optional[EmailStr]
+    is_admin: bool | None = None
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
 
 
 class UserLogin(BaseModel):
@@ -40,13 +46,18 @@ class UserLogin(BaseModel):
     password: str
 
 
-class UserResponse(UserBase):
+class UserPublic(BaseModel):
     id: UUID
+    username: str
     is_active: bool
     is_admin: bool
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserPrivate(UserPublic):
+    email: EmailStr
 
 
 # Game Pydantic Schemas
@@ -111,6 +122,6 @@ class ReviewResponse(ReviewBase):
     game_id: UUID
     created_at: datetime
     updated_at: datetime
-    user: Optional[UserResponse] = None
+    user: Optional[UserPublic] = None
     game: Optional[GameResponse] = None
     model_config = ConfigDict(from_attributes=True)
