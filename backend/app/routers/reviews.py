@@ -6,6 +6,7 @@ from app.database import get_db
 from app.models import Review
 from app.schemas import ReviewCreate, ReviewResponse, ReviewUpdate
 from uuid import UUID
+from sqlalchemy.orm import joinedload
 
 router = APIRouter(tags=["Reviews"])
 
@@ -25,7 +26,9 @@ async def get_review(review_id: UUID, db: Annotated[AsyncSession, Depends(get_db
 async def get_reviews_for_game(
     game_id: UUID, db: Annotated[AsyncSession, Depends(get_db)]
 ):
-    result = await db.execute(select(Review).where(Review.game_id == game_id))
+    result = await db.execute(
+        select(Review).options(joinedload(Review.user)).where(Review.game_id == game_id)
+    )
     reviews = result.scalars().all()
     return reviews
 
@@ -34,6 +37,8 @@ async def get_reviews_for_game(
 async def get_reviews_from_user(
     user_id: UUID, db: Annotated[AsyncSession, Depends(get_db)]
 ):
-    result = await db.execute(select(Review).where(Review.user_id == user_id))
+    result = await db.execute(
+        select(Review).options(joinedload(Review.game)).where(Review.user_id == user_id)
+    )
     reviews = result.scalars().all()
     return reviews

@@ -111,4 +111,6 @@ class ReviewResponse(ReviewBase):
     game_id: UUID
     created_at: datetime
     updated_at: datetime
+    user: Optional[UserResponse] = None
+    game: Optional[GameResponse] = None
     model_config = ConfigDict(from_attributes=True)
