@@ -23,7 +23,9 @@ async def get_reviews_for_game(
     game_id: UUID, db: Annotated[AsyncSession, Depends(get_db)]
 ):
     result = await db.execute(
-        select(Review).options(joinedload(Review.user)).where(Review.game_id == game_id)
+        select(Review)
+        .options(joinedload(Review.user), joinedload(Review.game))
+        .where(Review.game_id == game_id)
     )
     reviews = result.scalars().all()
     return reviews
