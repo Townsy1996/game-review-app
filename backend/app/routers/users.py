@@ -8,13 +8,7 @@ from app.schemas import UserCreate, UserUpdate, UserPublic, UserPrivate, Token
 from uuid import UUID
 from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
-from app.auth import (
-    create_access_token,
-    hash_password,
-    oauth2_scheme,
-    verify_access_token,
-    verify_password,
-)
+from app.auth import create_access_token, hash_password, verify_password, CurrentUser
 from app.config import settings
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -82,39 +76,8 @@ async def login_for_access_token(
 
 
 @router.get("/me", response_model=UserPrivate)
-async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)],
-    db: Annotated[AsyncSession, Depends(get_db)],
-):
-    """Get currently authenticated user"""
-    user_id = verify_access_token(token)
-    if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    try:
-        user_id_uuid = UUID(user_id)
-    except (TypeError, ValueError):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    result = await db.execute(select(User).where(User.id == user_id_uuid))
-
-    user = result.scalars().first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    return user
+async def get_current_user(current_user: CurrentUser):
+    return current_user
 
 
 @router.get("/", response_model=list[UserPublic])
@@ -186,6 +149,7 @@ async def update_user_partial(
     return user
 
 
+@router.patch("/{user_id}/make-admin")
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(user_id: UUID, db: Annotated[AsyncSession, Depends(get_db)]):
     result = await db.execute(select(User).where(User.id == user_id))
