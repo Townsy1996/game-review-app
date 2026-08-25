@@ -8,19 +8,14 @@ from app.schemas import ReviewCreate, ReviewResponse, ReviewUpdate
 from uuid import UUID
 from sqlalchemy.orm import joinedload
 from app.auth import CurrentUser
+from routers.helpers import get_review_or_404, check_review_owner_or_admin
 
 router = APIRouter(tags=["Reviews"])
 
 
 @router.get("/reviews/{review_id}", response_model=ReviewResponse)
 async def get_review(review_id: UUID, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(select(Review).where(Review.id == review_id))
-    review = result.scalars().first()
-    if review:
-        return review
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND, detail="Review not found"
-    )
+    return await get_review_or_404(db, review_id)
 
 
 @router.get("/games/{game_id}/reviews", response_model=list[ReviewResponse])
@@ -93,18 +88,8 @@ async def update_review(
     current_user: CurrentUser,
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    result = await db.execute(select(Review).where(Review.id == review_id))
-    review = result.scalars().first()
-    if not review:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Review not found"
-        )
-
-    if review.user_id != current_user.id and not current_user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorised to update this review",
-        )
+    review = await get_review_or_404(db, review_id)
+    check_review_owner_or_admin(review, current_user, action="update")
 
     update_data = review_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -121,18 +106,8 @@ async def delete_review(
     current_user: CurrentUser,
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    result = await db.execute(select(Review).where(Review.id == review_id))
-    review = result.scalars().first()
-    if not review:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Review not found"
-        )
-
-    if review.user_id != current_user.id and not current_user.is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorised to delete this review",
-        )
+    review = await get_review_or_404(db, review_id)
+    check_review_owner_or_admin(review, current_user, action="delete")
 
     await db.delete(review)
     await db.commit()
