@@ -7,12 +7,19 @@ from app.database import get_db
 from app.models import Game
 from app.schemas import GameCreate, GameResponse, GameUpdate
 from uuid import UUID
+from routers.helpers import get_game_or_404, require_admin
+from app.auth import CurrentUser
 
 router = APIRouter(prefix="/games", tags=["Games"])
 
 
 @router.post("/", response_model=GameResponse, status_code=status.HTTP_201_CREATED)
-async def create_game(game: GameCreate, db: Annotated[AsyncSession, Depends(get_db)]):
+async def create_game(
+    game: GameCreate,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    require_admin(current_user)
     result = await db.execute(
         select(Game).where(
             Game.title == game.title, Game.release_date == game.release_date
@@ -45,24 +52,19 @@ async def get_all_games(db: Annotated[AsyncSession, Depends(get_db)]):
 
 @router.get("/{game_id}", response_model=GameResponse)
 async def get_game(game_id: UUID, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(select(Game).where(Game.id == game_id))
-    game = result.scalars().first()
-    if game:
-        return game
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Game not found")
+    return await get_game_or_404(db, game_id)
 
 
 @router.put("/{game_id}", response_model=GameResponse)
 async def update_game_full(
-    game_id: UUID, game_data: GameCreate, db: Annotated[AsyncSession, Depends(get_db)]
+    game_id: UUID,
+    game_data: GameCreate,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    result = await db.execute(select(Game).where(Game.id == game_id))
-    game = result.scalars().first()
-    if not game:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Game not found"
-        )
 
+    require_admin(current_user)
+    game = await get_game_or_404(db, game_id)
     for key, value in game_data.model_dump().items():
         setattr(game, key, value)
 
@@ -81,16 +83,14 @@ async def update_game_full(
 
 @router.patch("/{game_id}", response_model=GameResponse)
 async def update_game_partial(
-    game_id: UUID, game_data: GameUpdate, db: Annotated[AsyncSession, Depends(get_db)]
+    game_id: UUID,
+    game_data: GameUpdate,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
 
-    result = await db.execute(select(Game).where(Game.id == game_id))
-    game = result.scalars().first()
-    if not game:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Game not found"
-        )
-
+    require_admin(current_user)
+    game = await get_game_or_404(db, game_id)
     update_data = game_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(game, field, value)
@@ -109,12 +109,12 @@ async def update_game_partial(
 
 
 @router.delete("/{game_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_game(game_id: UUID, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(select(Game).where(Game.id == game_id))
-    game = result.scalars().first()
-    if not game:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Game not found"
-        )
+async def delete_game(
+    game_id: UUID,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    require_admin(current_user)
+    game = await get_game_or_404(db, game_id)
     await db.delete(game)
     await db.commit()

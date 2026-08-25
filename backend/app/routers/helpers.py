@@ -2,9 +2,19 @@ from fastapi import status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from uuid import UUID
-from app.models import Review, User
+from app.models import Review, User, Game
 
 
+# Admin checker
+def require_admin(current_user: User) -> None:
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This action requires user to be an admin",
+        )
+
+
+# Reviews validation checks
 async def get_review_or_404(db: AsyncSession, review_id: UUID) -> Review:
     result = await db.execute(select(Review).where(Review.id == review_id))
     review = result.scalars().first()
@@ -23,3 +33,14 @@ def check_review_owner_or_admin(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"Not authorised to {action} this review",
         )
+
+
+# Games validation checks
+async def get_game_or_404(db: AsyncSession, game_id: UUID) -> Game:
+    result = await db.execute(select(Game).where(Game.id == game_id))
+    game = result.scalars().first()
+    if not game:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Game not found"
+        )
+    return game
