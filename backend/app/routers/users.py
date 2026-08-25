@@ -10,7 +10,7 @@ from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
 from app.auth import create_access_token, hash_password, verify_password, CurrentUser
 from app.config import settings
-from routers.helpers import get_user_or_404, check_user_owner
+from routers.helpers import get_user_or_404, check_user_owner, require_admin
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -139,6 +139,20 @@ async def update_user_partial(
     if user_update.email is not None:
         user.email = user_update.email.lower()
 
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+@router.patch("/{user_id}/make-admin", response_model=UserPrivate)
+async def make_user_admin(
+    user_id: UUID,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    require_admin(current_user)
+    user = await get_user_or_404(db, user_id)
+    user.is_admin = True
     await db.commit()
     await db.refresh(user)
     return user
