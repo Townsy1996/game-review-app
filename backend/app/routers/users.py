@@ -10,6 +10,7 @@ from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
 from app.auth import create_access_token, hash_password, verify_password, CurrentUser
 from app.config import settings
+from routers.helpers import get_user_or_404, check_user_owner
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -89,24 +90,18 @@ async def get_all_users(db: Annotated[AsyncSession, Depends(get_db)]):
 
 @router.get("/{user_id}", response_model=UserPublic)
 async def get_user(user_id: UUID, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalars().first()
-    if user:
-        return user
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return await get_user_or_404(db, user_id)
 
 
 @router.patch("/{user_id}", response_model=UserPrivate)
 async def update_user_partial(
-    user_id: UUID, user_update: UserUpdate, db: Annotated[AsyncSession, Depends(get_db)]
+    user_id: UUID,
+    user_update: UserUpdate,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
 ):
-
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalars().first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
+    user = await get_user_or_404(db, user_id)
+    check_user_owner(user, current_user, action="update")
 
     if (
         user_update.username is not None
@@ -149,14 +144,13 @@ async def update_user_partial(
     return user
 
 
-@router.patch("/{user_id}/make-admin")
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(user_id: UUID, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalars().first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
+async def delete_user(
+    user_id: UUID,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    user = await get_user_or_404(db, user_id)
+    check_user_owner(user, current_user, action="delete")
     await db.delete(user)
     await db.commit()

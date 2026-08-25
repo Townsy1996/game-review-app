@@ -14,6 +14,25 @@ def require_admin(current_user: User) -> None:
         )
 
 
+# User validation checks
+async def get_user_or_404(db: AsyncSession, user_id: UUID) -> User:
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    return user
+
+
+def check_user_owner(user: User, current_user: User, action: str = "update") -> None:
+    if user.id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Not authorised to {action} this user",
+        )
+
+
 # Reviews validation checks
 async def get_review_or_404(db: AsyncSession, review_id: UUID) -> Review:
     result = await db.execute(select(Review).where(Review.id == review_id))
