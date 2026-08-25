@@ -7,7 +7,7 @@ from app.database import get_db
 from app.models import Game
 from app.schemas import GameCreate, GameResponse, GameUpdate
 from uuid import UUID
-from routers.helpers import get_game_or_404, require_admin
+from app.routers.helpers import get_game_or_404, require_admin
 from app.auth import CurrentUser
 
 router = APIRouter(prefix="/games", tags=["Games"])

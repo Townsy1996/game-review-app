@@ -8,7 +8,7 @@ from app.schemas import ReviewCreate, ReviewResponse, ReviewUpdate
 from uuid import UUID
 from sqlalchemy.orm import joinedload
 from app.auth import CurrentUser
-from routers.helpers import get_review_or_404, check_review_owner_or_admin
+from app.routers.helpers import get_review_or_404, check_review_owner_or_admin
 
 router = APIRouter(tags=["Reviews"])
 

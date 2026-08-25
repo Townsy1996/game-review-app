@@ -10,7 +10,7 @@ from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
 from app.auth import create_access_token, hash_password, verify_password, CurrentUser
 from app.config import settings
-from routers.helpers import get_user_or_404, check_user_owner, require_admin
+from app.routers.helpers import get_user_or_404, check_user_owner, require_admin
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
