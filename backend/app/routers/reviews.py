@@ -47,7 +47,11 @@ async def get_reviews_from_user(
     return reviews
 
 
-@router.post("/", response_model=ReviewResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/reviews/create-review",
+    response_model=ReviewResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_review(
     review: ReviewCreate,
     current_user: CurrentUser,
@@ -80,3 +84,55 @@ async def create_review(
     new_review.game = game
 
     return new_review
+
+
+@router.patch("/reviews/{review_id}", response_model=ReviewResponse)
+async def update_review(
+    review_id: UUID,
+    review_update: ReviewUpdate,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    result = await db.execute(select(Review).where(Review.id == review_id))
+    review = result.scalars().first()
+    if not review:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Review not found"
+        )
+
+    if review.user_id != current_user.id and not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorised to update this review",
+        )
+
+    update_data = review_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(review, field, value)
+
+    await db.commit()
+    await db.refresh(review)
+    return review
+
+
+@router.delete("/reviews/{review_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_review(
+    review_id: UUID,
+    current_user: CurrentUser,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    result = await db.execute(select(Review).where(Review.id == review_id))
+    review = result.scalars().first()
+    if not review:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Review not found"
+        )
+
+    if review.user_id != current_user.id and not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorised to delete this review",
+        )
+
+    await db.delete(review)
+    await db.commit()
