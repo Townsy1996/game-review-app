@@ -31,9 +31,8 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(BaseModel):
-    username: Optional[str] = Field(min_length=3, max_length=30)
-    email: Optional[EmailStr]
-    is_admin: bool | None = None
+    username: Optional[str] = Field(default=None, min_length=3, max_length=30)
+    email: Optional[EmailStr] = None
 
 
 class Token(BaseModel):
