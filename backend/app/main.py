@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.database import engine, Base
-from app.routers import games, users, reviews
+from app.routers import games, users, reviews, health
 from contextlib import asynccontextmanager
 
 
@@ -19,3 +19,4 @@ app = FastAPI(title="Game Vault API", lifespan=lifespan)
 app.include_router(games.router)
 app.include_router(users.router)
 app.include_router(reviews.router)
+app.include_router(health.router)
