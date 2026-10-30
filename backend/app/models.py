@@ -5,7 +5,6 @@ from sqlalchemy import (
     Text,
     ForeignKey,
     DateTime,
-    ARRAY,
     Boolean,
     Date,
     UniqueConstraint,
@@ -14,7 +13,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ARRAY
 import uuid
 from app.enums import AgeRating
 

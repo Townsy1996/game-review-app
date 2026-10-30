@@ -44,8 +44,29 @@ async def create_game(
 
 
 @router.get("/", response_model=list[GameResponse])
-async def get_all_games(db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(select(Game))
+async def get_all_games(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    genre: str | None = None,
+    platform: str | None = None,
+    is_multiplayer: bool | None = None,
+    is_couch_coop: bool | None = None,
+):
+
+    query = select(Game)
+
+    if genre is not None:
+        query = query.where(Game.genres.contains([genre]))
+
+    if platform is not None:
+        query = query.where(Game.platforms.contains([platform]))
+
+    if is_multiplayer is not None:
+        query = query.where(Game.is_multiplayer == is_multiplayer)
+
+    if is_couch_coop is not None:
+        query = query.where(Game.is_couch_coop == is_couch_coop)
+
+    result = await db.execute(query)
     games = result.scalars().all()
     return games
 
