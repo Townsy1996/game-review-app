@@ -3,7 +3,7 @@ from typing import List, Optional
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 import string
-from app.enums import AgeRating, Genre
+from app.enums import AgeRating, Genre, Platform
 
 
 # User Pydantic Schemas
@@ -62,7 +62,7 @@ class UserPrivate(UserPublic):
 # Game Pydantic Schemas
 class GameBase(BaseModel):
     title: str = Field(min_length=1, max_length=80)
-    platforms: List[str]
+    platforms: List[Platform]
     genres: List[Genre]
     release_date: date
     developer: str
@@ -80,7 +80,7 @@ class GameCreate(GameBase):
 
 class GameUpdate(BaseModel):
     title: Optional[str] = Field(default=None, min_length=1, max_length=80)
-    platforms: Optional[List[str]] = None
+    platforms: Optional[List[Platform]] = None
     genres: Optional[List[Genre]] = None
     release_date: Optional[date] = None
     developer: Optional[str] = None

@@ -28,3 +28,13 @@ class Genre(str, Enum):
     MMORPG = "MMORPG"
     SANDBOX = "Sandbox"
     ROGUELIKE = "Roguelike"
+
+
+class Platform(str, Enum):
+    PC = "PC"
+    PLAYSTATION_5 = "PlayStation 5"
+    PLAYSTATION_4 = "PlayStation 4"
+    XBOX_SERIES = "Xbox Series S/X"
+    XBOX_ONE = "Xbox One"
+    NINTENDO_SWITCH = "Nintendo Switch"
+    NINTENDO_SWITCH_2 = "Nintendo Switch 2"

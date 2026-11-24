@@ -9,6 +9,7 @@ from app.schemas import GameCreate, GameResponse, GameUpdate
 from uuid import UUID
 from app.routers.helpers import get_game_or_404, require_admin
 from app.auth import CurrentUser
+from app.enums import Genre, Platform
 
 router = APIRouter(prefix="/games", tags=["Games"])
 
@@ -46,8 +47,8 @@ async def create_game(
 @router.get("/", response_model=list[GameResponse])
 async def get_all_games(
     db: Annotated[AsyncSession, Depends(get_db)],
-    genre: str | None = None,
-    platform: str | None = None,
+    genre: Genre | None = None,
+    platform: Platform | None = None,
     is_multiplayer: bool | None = None,
     is_couch_coop: bool | None = None,
 ):
