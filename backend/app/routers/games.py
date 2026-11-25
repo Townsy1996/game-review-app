@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -51,21 +51,27 @@ async def get_all_games(
     platform: Platform | None = None,
     is_multiplayer: bool | None = None,
     is_couch_coop: bool | None = None,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
 ):
 
     query = select(Game)
 
     if genre is not None:
-        query = query.where(Game.genres.contains([genre]))
+        query = query.where(Game.genres.contains([genre.value]))
 
     if platform is not None:
-        query = query.where(Game.platforms.contains([platform]))
+        query = query.where(Game.platforms.contains([platform.value]))
 
     if is_multiplayer is not None:
         query = query.where(Game.is_multiplayer == is_multiplayer)
 
     if is_couch_coop is not None:
         query = query.where(Game.is_couch_coop == is_couch_coop)
+
+    query = query.order_by(Game.title, Game.id)
+    query = query.limit(limit)
+    query = query.offset(offset)
 
     result = await db.execute(query)
     games = result.scalars().all()
