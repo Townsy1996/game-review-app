@@ -1,3 +1,6 @@
 .env
 __pycache__
 venv
+tests/
+pytest.ini
+requirements-dev.txt
